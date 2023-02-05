@@ -2,6 +2,13 @@ This plugin is used to implement a foreground service on the Android platform.
 
 [![pub package](https://img.shields.io/pub/v/flutter_foreground_task.svg)](https://pub.dev/packages/flutter_foreground_task)
 
+## Fork: Two-Way Communication
+
+In this fork I modified the bundled example to demonstrate two-way
+communication. I added a port from the ui isolate to the background
+isolate. I'm transferring it through the port in the other direction
+as suggested by https://medium.com/flutter-community/understanding-isolates-in-flutter-5b26ec4ed627
+
 ## Features
 
 * Can perform repetitive task with foreground service.

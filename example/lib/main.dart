@@ -14,11 +14,31 @@ void startCallback() {
 
 class MyTaskHandler extends TaskHandler {
   SendPort? _sendPort;
+  ReceivePort? _fromUiReceivePort;
   int _eventCount = 0;
 
   @override
   Future<void> onStart(DateTime timestamp, SendPort? sendPort) async {
     _sendPort = sendPort;
+
+    if (sendPort != null) {
+      final fromUiReceivePort = ReceivePort();
+      _fromUiReceivePort = fromUiReceivePort;
+      sendPort.send(fromUiReceivePort.sendPort);
+      () async {
+        await for (final message in fromUiReceivePort) {
+          print('Came back from ui: $message');
+          if (message is int) {
+            _eventCount = message;
+
+            FlutterForegroundTask.updateService(
+              notificationTitle: 'MyTaskHandler',
+              notificationText: 'eventCount: $_eventCount',
+            );
+          }
+        }
+      }();
+    }
 
     // You can use the getData function to get the stored data.
     final customData =
@@ -28,15 +48,9 @@ class MyTaskHandler extends TaskHandler {
 
   @override
   Future<void> onEvent(DateTime timestamp, SendPort? sendPort) async {
-    FlutterForegroundTask.updateService(
-      notificationTitle: 'MyTaskHandler',
-      notificationText: 'eventCount: $_eventCount',
-    );
-
-    // Send data to the main isolate.
+    // Send data to the main isolate, which will increment it and send it back.
+    print('sending to ui: $_eventCount');
     sendPort?.send(_eventCount);
-
-    _eventCount++;
   }
 
   @override
@@ -90,6 +104,7 @@ class ExamplePage extends StatefulWidget {
 
 class _ExamplePageState extends State<ExamplePage> {
   ReceivePort? _receivePort;
+  SendPort? _fromUiSendPort;
 
   void _initForegroundTask() {
     FlutterForegroundTask.init(
@@ -175,8 +190,11 @@ class _ExamplePageState extends State<ExamplePage> {
     if (receivePort != null) {
       _receivePort = receivePort;
       _receivePort?.listen((message) {
-        if (message is int) {
+        if (message is SendPort) {
+          _fromUiSendPort = message;
+        } else if (message is int) {
           print('eventCount: $message');
+          _fromUiSendPort?.send(message + 1);
         } else if (message is String) {
           if (message == 'onNotificationPressed') {
             Navigator.of(context).pushNamed('/resume-route');
@@ -197,13 +215,11 @@ class _ExamplePageState extends State<ExamplePage> {
     _receivePort = null;
   }
 
-  T? _ambiguate<T>(T? value) => value;
-
   @override
   void initState() {
     super.initState();
     _initForegroundTask();
-    _ambiguate(WidgetsBinding.instance)?.addPostFrameCallback((_) async {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
       // You can get the previous ReceivePort without restarting the service.
       if (await FlutterForegroundTask.isRunningService) {
         final newReceivePort = await FlutterForegroundTask.receivePort;
