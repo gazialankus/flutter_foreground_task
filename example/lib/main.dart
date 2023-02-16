@@ -149,14 +149,14 @@ class _ExamplePageState extends State<ExamplePage> {
     //
     // If you do not use the onNotificationPressed or launchApp function,
     // you do not need to write this code.
-    if (!await FlutterForegroundTask.canDrawOverlays) {
-      final isGranted =
-          await FlutterForegroundTask.openSystemAlertWindowSettings();
-      if (!isGranted) {
-        print('SYSTEM_ALERT_WINDOW permission denied!');
-        return false;
-      }
-    }
+    // if (!await FlutterForegroundTask.canDrawOverlays) {
+    //   final isGranted =
+    //       await FlutterForegroundTask.openSystemAlertWindowSettings();
+    //   if (!isGranted) {
+    //     print('SYSTEM_ALERT_WINDOW permission denied!');
+    //     return false;
+    //   }
+    // }
 
     // You can save data using the saveData function.
     await FlutterForegroundTask.saveData(key: 'customData', value: 'hello');
